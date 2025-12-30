@@ -1,6 +1,8 @@
 """Resume PDF parser using OpenAI."""
 
 import os
+import re
+from datetime import datetime
 from typing import Dict, Any
 
 from ..config import RESUME_PATH
@@ -49,12 +51,14 @@ You are a resume parser. Extract structured information from the resume text.
 
 Return ONLY a valid JSON object with these exact fields:
 {
-  "name": "full name (string or empty)",
-  "current_title": "current job title (string or empty)",
-  "summary": "brief professional summary (string or empty)",
-  "skills": ["skill1", "skill2", ...] (array of strings),
-  "experience": ["job1 at company1", "job2 at company2", ...] (array),
-  "projects": ["project1 description", "project2 description", ...] (array)
+    "name": "full name (string or empty)",
+    "current_title": "current job title (string or empty)",
+    "summary": "brief professional summary (string or empty)",
+    "skills": ["skill1", "skill2", ...] (array of strings),
+    "experience": ["job1 at company1", "job2 at company2", ...] (array),
+    "projects": ["project1 description", "project2 description", ...] (array),
+    "earliest_experience_start_year": "YYYY or empty string",
+    "total_experience_years": "integer number of years or 0"
 }
 
 Rules:
@@ -62,6 +66,8 @@ Rules:
 - Do NOT invent or hallucinate skills, experience, or projects
 - Use empty string "" for missing name/title/summary
 - Use empty array [] for missing skills/experience/projects
+- For earliest_experience_start_year, return "" if no dates are present
+- For total_experience_years, return 0 if dates are not present or cannot be inferred
 - Return valid JSON only, no other text
 """
 
@@ -78,8 +84,43 @@ Rules:
         "skills": [],
         "experience": [],
         "projects": [],
+        "earliest_experience_start_year": "",
+        "total_experience_years": 0,
     }
     parsed = fill_defaults(parsed, defaults)
+
+    # Post-compute experience duration; prioritize years in the Experience section over Education
+    try:
+        text_lower = raw_text.lower()
+
+        def extract_years(blob: str):
+            return [int(y) for y in re.findall(r"\b(?:19|20)\d{2}\b", blob)]
+
+        # Try to isolate experience block between "experience" and "education" headings
+        exp_start = None
+        for marker in ["work experience", "experience"]:
+            idx = text_lower.find(marker)
+            if idx != -1:
+                exp_start = idx
+                break
+
+        edu_idx = text_lower.find("education")
+
+        if exp_start is not None:
+            exp_block = raw_text[exp_start: edu_idx if edu_idx != -1 else None]
+            years = extract_years(exp_block)
+        else:
+            years = extract_years(raw_text)
+
+        earliest_year = min(years) if years else None
+        if earliest_year:
+            parsed["earliest_experience_start_year"] = str(earliest_year)
+            current_year = datetime.utcnow().year
+            total_years = max(0, current_year - earliest_year)
+            parsed["total_experience_years"] = total_years
+    except Exception:
+        # If anything fails, keep the LLM values / defaults
+        pass
 
     # Include raw text for reference
     parsed["raw_text"] = raw_text
