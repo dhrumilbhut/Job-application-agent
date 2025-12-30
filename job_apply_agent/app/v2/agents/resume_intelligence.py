@@ -11,39 +11,7 @@ import openai
 
 from ...utils.openai_utils import ensure_api_key_set
 from ..schemas import ResumeIntelligence
-
-
-SYSTEM_PROMPT = """You are analyzing a resume to extract structured intelligence about the candidate.
-
-Your task:
-- Extract name, current role, seniority level, tech skills, domain focus, experience, and recent highlights
-- Do NOT know anything about a specific job
-- Do NOT make assumptions about fit or suitability
-- Focus only on what the resume explicitly states
-- Be conservative: only include skills/experience mentioned in the resume
-
-Return a JSON object with these fields:
-{
-  "name": "candidate name or empty string",
-  "current_role": "current job title or empty string",
-  "seniority_level": "junior | mid | senior | unknown",
-  "tech_skills": ["skill1", "skill2", ...],
-  "domain_focus": "backend | frontend | fullstack | data | devops | ml | other",
-  "experience_years": 0,
-  "recent_highlights": ["highlight1", "highlight2", ...]
-}
-
-Rules:
-- name: extract from resume or use empty string
-- current_role: current position title
-- seniority_level: infer from experience ("5+ years", "senior engineer") or "unknown"
-- tech_skills: list of explicit skills mentioned (languages, frameworks, tools)
-- domain_focus: primary area of expertise based on experience and skills
-- experience_years: total professional years (estimate as integer)
-- recent_highlights: 2-3 most recent or impactful projects/roles (short strings)
-- Use empty arrays for missing skills/highlights
-- Return valid JSON only
-"""
+from ..prompts import RESUME_INTELLIGENCE_SYSTEM_PROMPT
 
 
 def analyze_resume(resume_profile: Dict[str, Any]) -> ResumeIntelligence:
@@ -75,7 +43,7 @@ Return JSON only."""
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": RESUME_INTELLIGENCE_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0,

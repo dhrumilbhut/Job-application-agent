@@ -11,38 +11,7 @@ import openai
 
 from ...utils.openai_utils import ensure_api_key_set
 from ..schemas import JDProfile, ResumeIntelligence, Decision
-
-
-SYSTEM_PROMPT = """You are making a hiring decision for a candidate based on JD requirements and resume intelligence.
-
-Your task:
-- Compare JD requirements with candidate capabilities
-- Output a structured decision: APPLY, REVIEW, or SKIP
-- Provide clear reasons and blockers
-- Be conservative: only APPLY on strong match
-
-Decision logic:
-- APPLY: Strong match on seniority level, domain, and key skills. Candidate clearly has what the JD asks for.
-- REVIEW: Partial match, unclear fit, or any ambiguity. User should manually review.
-- SKIP: Explicit blockers such as: overqualified (seniority mismatch), completely wrong domain, or missing critical requirements.
-
-Return a JSON object:
-{
-  "decision": "APPLY | REVIEW | SKIP",
-  "reasons": ["reason1", "reason2", ...],
-  "blockers": ["blocker1", "blocker2", ...],
-  "confidence": "low | medium | high"
-}
-
-Rules:
-- reasons: positive signals supporting the decision (max 3)
-- blockers: issues or concerns (empty if no blockers)
-- confidence: low if uncertain, medium if reasonable match, high if clear decision
-- Be explicit and avoid vague language
-- If domain mismatch, include it in blockers
-- If seniority too far off, include it in blockers
-- Return valid JSON only
-"""
+from ..prompts import DECISION_AGENT_SYSTEM_PROMPT
 
 
 def decide(jd_profile: JDProfile, resume_intelligence: ResumeIntelligence) -> Decision:
@@ -87,7 +56,7 @@ Return JSON only."""
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": DECISION_AGENT_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0,
