@@ -1,0 +1,59 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.dll
+
+# Virtual environments
+.venv/
+.venv*/
+venv/
+env/
+*.venv
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Test / coverage artifacts
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+storage/applications.log
+
+# App runtime data
+storage/resume.pdf
+storage/current_jd.json
+storage/resume_profile.json
+storage/jds/
+
+# Misc
+*.bak
+*.tmp
